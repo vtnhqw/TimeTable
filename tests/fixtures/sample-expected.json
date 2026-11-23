@@ -1,0 +1,79 @@
+[
+  {
+    "day": "Mon",
+    "code": "CSEB4123",
+    "start": "14:00",
+    "end": "16:00",
+    "room": "BN-4-015"
+  },
+  {
+    "day": "Mon",
+    "code": "CSEB3443",
+    "start": "18:00",
+    "end": "19:00",
+    "room": "TA-2-214"
+  },
+  {
+    "day": "Tue",
+    "code": "CSEB3433",
+    "start": "08:00",
+    "end": "10:00",
+    "room": "TA-2-216"
+  },
+  {
+    "day": "Tue",
+    "code": "ISWB112",
+    "start": "17:00",
+    "end": "19:00",
+    "room": "BM-1-018"
+  },
+  {
+    "day": "Wed",
+    "code": "CSEB4123",
+    "start": "08:00",
+    "end": "10:00",
+    "room": "TA-4-213"
+  },
+  {
+    "day": "Wed",
+    "code": "CSEB3443",
+    "start": "10:00",
+    "end": "12:00",
+    "room": "TA-2-214"
+  },
+  {
+    "day": "Wed",
+    "code": "CISB3323",
+    "start": "13:00",
+    "end": "14:00",
+    "room": "BM-1-018"
+  },
+  {
+    "day": "Thu",
+    "code": "CSEB3433",
+    "start": "10:00",
+    "end": "11:00",
+    "room": "BN-4-012"
+  },
+  {
+    "day": "Thu",
+    "code": "CISB3323",
+    "start": "12:00",
+    "end": "14:00",
+    "room": "BM-1-003/004"
+  },
+  {
+    "day": "Thu",
+    "code": "CSEB3313",
+    "start": "14:00",
+    "end": "16:00",
+    "room": "Infolab 2, Lvl 5, Lib."
+  },
+  {
+    "day": "Fri",
+    "code": "CSEB3313",
+    "start": "08:00",
+    "end": "10:00",
+    "room": "BM-1-020/21"
+  }
+]

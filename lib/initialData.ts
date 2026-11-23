@@ -1,0 +1,68 @@
+import { ClassEntry } from "./schema";
+
+export const SAMPLE_CLASSES: ClassEntry[] = [
+  {
+    id: "sample-1",
+    subject: "Calculus II",
+    day: "Mon",
+    start: "09:00",
+    end: "10:30",
+    room: "B204",
+  },
+  {
+    id: "sample-2",
+    subject: "Physics Lab",
+    day: "Mon",
+    start: "14:00",
+    end: "17:00",
+    room: "Lab 3",
+  },
+  {
+    id: "sample-3",
+    subject: "Data Structures",
+    day: "Tue",
+    start: "11:00",
+    end: "12:30",
+    room: "A101",
+  },
+  {
+    id: "sample-4",
+    subject: "Linear Algebra",
+    day: "Wed",
+    start: "09:00",
+    end: "10:30",
+    room: "C302",
+  },
+  {
+    id: "sample-5",
+    subject: "English Writing",
+    day: "Thu",
+    start: "13:00",
+    end: "14:30",
+    room: "D105",
+  },
+  {
+    id: "sample-6",
+    subject: "Organic Chem",
+    day: "Fri",
+    start: "09:00",
+    end: "10:30",
+    room: "E210",
+  },
+  {
+    id: "sample-7",
+    subject: "Philosophy 101",
+    day: "Thu",
+    start: "10:00",
+    end: "11:30",
+    room: "F111",
+  },
+  {
+    id: "sample-8",
+    subject: "Statistics",
+    day: "Fri",
+    start: "11:00",
+    end: "12:30",
+    room: "G305",
+  },
+];
