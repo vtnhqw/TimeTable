@@ -230,3 +230,72 @@ test("conflicts are flagged and both overlapping classes are visible in the wall
   await page.getByRole("button", { name: "Delete Art", exact: true }).click();
   await expect(page.getByText(/classes overlap in time/)).toHaveCount(0);
 });
+
+test("review action icons are centered in consistent touch targets", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try a sample", exact: true }).click();
+  for (const name of ["Edit Calculus II", "Delete Calculus II"]) {
+    const button = page.getByRole("button", { name, exact: true });
+    await expect
+      .poll(() =>
+        button.evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          const icon = element.querySelector("svg").getBoundingClientRect();
+          return Math.max(
+            Math.abs(box.x + box.width / 2 - icon.x - icon.width / 2),
+            Math.abs(box.y + box.height / 2 - icon.y - icon.height / 2),
+          );
+        }),
+      )
+      .toBeLessThan(1);
+    const box = await button.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test("compact wallpaper labels expose complete class details", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "timetable_classes_v1",
+      JSON.stringify([
+        {
+          id: "short",
+          day: "Mon",
+          start: "08:00",
+          end: "08:10",
+          subject: "Human Computer Interaction (CISB3323)",
+          room: "BM-1-003/004",
+        },
+        {
+          id: "late",
+          day: "Tue",
+          start: "17:00",
+          end: "19:00",
+          subject: "Systems Design",
+          room: "TA-2-216",
+        },
+      ]),
+    ),
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Continue to Style" }).click();
+  await expect(page.getByText(/shortened in this wallpaper/)).toBeVisible();
+  await expect(
+    page
+      .locator(".schedule-details")
+      .getByText("Human Computer Interaction (CISB3323)", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .locator(".schedule-details")
+      .getByText("BM-1-003/004", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Preview Wallpaper" }).click();
+  await expect(page.getByText(/shortened in this wallpaper/)).toBeVisible();
+});

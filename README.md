@@ -61,3 +61,7 @@ The header toggles website light/dark mode independently of the exported wallpap
 
 With the site running at http://127.0.0.1:3000, use `npm run test:ui` to test mobile layouts, theme persistence, editing and PNG downloads. Run `npx playwright install chromium --only-shell` once to install the test browser.
 # TimeTable
+
+## Image scanning interface
+
+The scanner shows the selected image as a softly animated particle field with an indeterminate activity indicator and actual preparation, reading, and checking states. Its preview is separate from the committed schedule image, so cancelling or failing a replacement preserves the previous schedule. The studio uses a shared neutral/blue palette, system typography, rounded controls and light/dark themes. Reduced Motion disables scan sweeps and particle movement; particle rendering pauses in hidden tabs and cleans up on exit.

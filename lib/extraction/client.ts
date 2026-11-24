@@ -97,7 +97,7 @@ export async function extractTimetableFromImage(
   try {
     onProgress?.(10, "Preparing your image…");
     const image = await prepareUpload(file, controller.signal);
-    onProgress?.(30, "Sending the image to Gemini and reading every day…");
+    onProgress?.(30, "Reading your timetable. This may take a moment…");
     const form = new FormData();
     form.set("image", image, "timetable.jpg");
     const response = await fetch("/api/extract", {

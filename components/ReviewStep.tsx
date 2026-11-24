@@ -105,7 +105,7 @@ export function ReviewStep({
             setEditingEntry(null);
             setIsModalOpen(true);
           }}
-          className="px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all w-full sm:w-auto"
+          className="px-4 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Class</span>
@@ -179,6 +179,7 @@ export function ReviewStep({
       {/* Day Filter Pills */}
       <div className="filter-pills flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
         <button
+          aria-pressed={selectedDayFilter === "All"}
           onClick={() => setSelectedDayFilter("All")}
           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             selectedDayFilter === "All"
@@ -203,10 +204,11 @@ export function ReviewStep({
           return (
             <button
               key={d}
+              aria-pressed={selectedDayFilter === d}
               onClick={() => setSelectedDayFilter(d)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
                 selectedDayFilter === d
-                  ? "bg-emerald-800 text-white font-bold"
+                  ? "bg-blue-800 text-white font-bold"
                   : "bg-stone-100 text-stone-500 hover:text-stone-800"
               }`}
             >
@@ -238,7 +240,7 @@ export function ReviewStep({
                   setEditingEntry(null);
                   setIsModalOpen(true);
                 }}
-                className="text-xs text-emerald-700 hover:underline"
+                className="text-xs text-blue-700 hover:underline"
               >
                 + Add your first class
               </button>
@@ -248,10 +250,14 @@ export function ReviewStep({
               <motion.div
                 key={item.id}
                 layout
+                transition={{
+                  layout: { type: "spring", stiffness: 450, damping: 38 },
+                  opacity: { duration: 0.18 },
+                }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="class-row p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 hover:border-stone-200 transition-all flex items-center justify-between gap-3 group"
+                className="class-row p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 hover:border-stone-200 transition-colors flex items-center justify-between gap-3 group"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
@@ -278,7 +284,7 @@ export function ReviewStep({
                       </span>
                     )}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500 mt-0.5">
-                      <span className="font-semibold text-emerald-700">
+                      <span className="font-semibold text-blue-700">
                         {item.day}
                       </span>
                       <span className="flex items-center gap-1 font-mono text-stone-600">
@@ -301,7 +307,7 @@ export function ReviewStep({
                       setEditingEntry(item);
                       setIsModalOpen(true);
                     }}
-                    className="p-2 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-800 transition-colors"
+                    className="class-action p-2 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-800 transition-colors"
                     title="Edit Class"
                     aria-label={`Edit ${item.subject}`}
                   >
@@ -309,7 +315,7 @@ export function ReviewStep({
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="p-2 rounded-lg bg-stone-100 hover:bg-red-50 text-stone-500 hover:text-red-400 transition-colors"
+                    className="class-action delete-action p-2 rounded-lg bg-stone-100 hover:bg-red-50 text-stone-500 hover:text-red-400 transition-colors"
                     title="Delete Class"
                     aria-label={`Delete ${item.subject}`}
                   >
@@ -339,7 +345,7 @@ export function ReviewStep({
           onClick={onContinue}
           className={`px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all ${
             classes.length > 0
-              ? "bg-emerald-800 hover:bg-emerald-700 text-white shadow-emerald-700/25"
+              ? "bg-blue-800 hover:bg-blue-700 text-white shadow-blue-700/25"
               : "bg-stone-100 text-stone-500 cursor-not-allowed shadow-none"
           }`}
         >

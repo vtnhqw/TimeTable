@@ -141,7 +141,7 @@ export function AddClassModal({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-700/20 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-700/20 text-blue-700 flex items-center justify-center">
                   <BookOpen className="w-4 h-4" />
                 </div>
                 <h3
@@ -187,7 +187,7 @@ export function AddClassModal({
                   placeholder="e.g. Calculus II, Physics Lab"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-700 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 placeholder-slate-500 text-sm focus:outline-none focus:border-blue-700 transition-colors"
                   autoFocus
                 />
               </div>
@@ -206,7 +206,7 @@ export function AddClassModal({
                       onClick={() => setDay(d)}
                       className={`py-2 rounded-lg text-xs font-medium transition-all ${
                         day === d
-                          ? "bg-emerald-800 text-white shadow-sm"
+                          ? "bg-blue-800 text-white shadow-sm"
                           : "bg-stone-100 text-stone-500 hover:bg-stone-200/80 hover:text-stone-700"
                       }`}
                     >
@@ -223,7 +223,7 @@ export function AddClassModal({
                     htmlFor="start-time"
                     className="text-xs font-semibold text-stone-600 flex items-center gap-1.5"
                   >
-                    <Clock className="w-3.5 h-3.5 text-emerald-700" />
+                    <Clock className="w-3.5 h-3.5 text-blue-700" />
                     <span>Start Time</span>
                   </label>
                   <input
@@ -232,7 +232,7 @@ export function AddClassModal({
                     type="time"
                     value={start}
                     onChange={(e) => setStart(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-sm focus:outline-none focus:border-emerald-700"
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-sm focus:outline-none focus:border-blue-700"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -240,7 +240,7 @@ export function AddClassModal({
                     htmlFor="end-time"
                     className="text-xs font-semibold text-stone-600 flex items-center gap-1.5"
                   >
-                    <Clock className="w-3.5 h-3.5 text-emerald-700" />
+                    <Clock className="w-3.5 h-3.5 text-blue-700" />
                     <span>End Time</span>
                   </label>
                   <input
@@ -249,7 +249,7 @@ export function AddClassModal({
                     type="time"
                     value={end}
                     onChange={(e) => setEnd(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-sm focus:outline-none focus:border-emerald-700"
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-sm focus:outline-none focus:border-blue-700"
                   />
                 </div>
               </div>
@@ -270,7 +270,7 @@ export function AddClassModal({
                   placeholder="e.g. B204, Lab 3, Hall A"
                   value={room}
                   onChange={(e) => setRoom(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-700"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 placeholder-slate-500 text-sm focus:outline-none focus:border-blue-700"
                 />
               </div>
 
@@ -285,7 +285,7 @@ export function AddClassModal({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all"
+                  className="px-5 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all"
                 >
                   {initialEntry ? (
                     <Save className="w-4 h-4" />

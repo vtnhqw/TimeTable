@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS: WallpaperSettings = {
 export default function Home() {
   const requestId = useRef(0);
   const extraction = useRef<AbortController | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [sourceImage, setSourceImage] = useState<string | undefined>();
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function Home() {
     extraction.current?.abort();
     extraction.current = new AbortController();
     const id = ++requestId.current;
+    setPendingFile(file);
     setCurrentStep("extracting");
     setOcrProgress(5);
     setOcrStatus("Preparing your image…");
@@ -126,6 +128,7 @@ export default function Home() {
             : "No classes were found. Try another image or add classes manually.",
         ]);
       }
+      setPendingFile(null);
       setCurrentStep("review");
     } catch (error) {
       if (id !== requestId.current) return;
@@ -135,6 +138,7 @@ export default function Home() {
           ? error.message
           : "The image could not be processed. Try another image or add your classes manually.",
       ]);
+      setPendingFile(null);
       setCurrentStep("review");
     }
   };
@@ -164,6 +168,7 @@ export default function Home() {
       requestId.current++;
       extraction.current?.abort();
       setSourceFile(null);
+      setPendingFile(null);
       handleUpdateClasses([]);
       handleUpdateSettings(DEFAULT_SETTINGS);
       setWarnings([]);
@@ -199,7 +204,7 @@ export default function Home() {
         )}
 
         <div
-          className={`workspace ${currentStep === "upload" ? "welcome-workspace" : "editor-workspace"}`}
+          className={`workspace ${currentStep === "upload" ? "welcome-workspace" : currentStep === "extracting" ? "scanning-workspace" : "editor-workspace"}`}
         >
           <AnimatePresence mode="wait">
             {currentStep === "upload" && (
@@ -214,11 +219,13 @@ export default function Home() {
             {currentStep === "extracting" && (
               <ExtractingStep
                 key="extracting"
+                file={pendingFile}
                 progress={ocrProgress}
                 statusText={ocrStatus}
                 onCancel={() => {
                   requestId.current++;
                   extraction.current?.abort();
+                  setPendingFile(null);
                   setCurrentStep("upload");
                 }}
               />

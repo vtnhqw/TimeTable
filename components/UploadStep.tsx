@@ -34,7 +34,7 @@ export function UploadStep({
           <span>One glance.</span>
         </h1>
         <p className="hero-description">
-          Turn your timetable into a wallpaper.
+          From a busy timetable to a beautifully simple wallpaper.
         </p>
         <div
           className={`upload-zone ${drag ? "dragging" : ""}`}
@@ -94,6 +94,10 @@ export function UploadStep({
         <p className="privacy-note">Images are processed by Google Gemini.</p>
       </section>
       <aside className="showcase" aria-label="iPhone lock screen preview">
+        <div className="showcase-heading">
+          <span>MADE FOR YOUR EVERYDAY</span>
+          <h2>A place for every class.</h2>
+        </div>
         <div className="phone-stage">
           <PhonePreview theme={theme}>
             <WallpaperPreviewCanvas

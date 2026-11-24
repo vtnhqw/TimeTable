@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Palette,
   Smartphone,
@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { ClassEntry, WallpaperSettings, DeviceId } from "@/lib/schema";
 import { DEVICES } from "@/lib/devices";
 import { WallpaperPreviewCanvas } from "./WallpaperPreviewCanvas";
+import { ScheduleDetails } from "./ScheduleDetails";
 import { PhonePreview } from "./PhonePreview";
 import { THEMES } from "@/lib/themes";
 import { getSubjectColor } from "@/lib/colors";
@@ -38,6 +39,7 @@ export function StyleStep({
   onBack,
   onContinue,
 }: StyleStepProps) {
+  const [shortenedIds, setShortenedIds] = useState<string[]>([]);
   // Extract unique subjects
   const uniqueSubjects = Array.from(
     new Set(classes.map((c) => c.subject.trim())),
@@ -65,7 +67,7 @@ export function StyleStep({
         {/* 1. Theme Selection: Dark Mode vs Light Mode */}
         <div className="space-y-3">
           <label className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-emerald-700" />
+            <Palette className="w-3.5 h-3.5 text-blue-700" />
             <span>Theme Preset</span>
           </label>
 
@@ -77,13 +79,13 @@ export function StyleStep({
               onClick={() => onUpdateSettings({ ...settings, theme: "dark" })}
               className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden group ${
                 settings.theme === "dark"
-                  ? "bg-white border-emerald-700 shadow-sm"
+                  ? "bg-white border-blue-700 shadow-sm"
                   : "bg-white border-stone-200 hover:border-stone-200"
               }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-stone-100 text-emerald-700 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-stone-100 text-blue-700 flex items-center justify-center">
                     <Moon className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-stone-800">
@@ -91,7 +93,7 @@ export function StyleStep({
                   </span>
                 </div>
                 {settings.theme === "dark" && (
-                  <div className="w-5 h-5 rounded-full bg-emerald-800 text-white flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-blue-800 text-white flex items-center justify-center">
                     <Check className="w-3 h-3" />
                   </div>
                 )}
@@ -119,7 +121,7 @@ export function StyleStep({
               onClick={() => onUpdateSettings({ ...settings, theme: "light" })}
               className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden group ${
                 settings.theme === "light"
-                  ? "bg-white border-emerald-700 shadow-sm"
+                  ? "bg-white border-blue-700 shadow-sm"
                   : "bg-white border-stone-200 hover:border-stone-200"
               }`}
             >
@@ -133,7 +135,7 @@ export function StyleStep({
                   </span>
                 </div>
                 {settings.theme === "light" && (
-                  <div className="w-5 h-5 rounded-full bg-emerald-800 text-white flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-blue-800 text-white flex items-center justify-center">
                     <Check className="w-3 h-3" />
                   </div>
                 )}
@@ -159,7 +161,7 @@ export function StyleStep({
         {/* 2. Device Model Selection */}
         <div className="space-y-3">
           <label className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-            <Smartphone className="w-3.5 h-3.5 text-emerald-700" />
+            <Smartphone className="w-3.5 h-3.5 text-blue-700" />
             <span>iPhone Model</span>
           </label>
 
@@ -177,7 +179,7 @@ export function StyleStep({
                   }
                   className={`p-3 rounded-2xl border text-center transition-all ${
                     isSelected
-                      ? "bg-emerald-800/15 border-emerald-700 text-stone-800 shadow-sm"
+                      ? "bg-blue-800/15 border-blue-700 text-stone-800 shadow-sm"
                       : "bg-white border-stone-200 text-stone-500 hover:text-stone-700 hover:border-stone-200"
                   }`}
                 >
@@ -196,7 +198,7 @@ export function StyleStep({
           <div className="p-4 rounded-2xl bg-white border border-stone-200 flex items-center justify-between">
             <div className="space-y-0.5">
               <div className="text-xs font-semibold text-stone-800 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-emerald-700" />
+                <Building className="w-3.5 h-3.5 text-blue-700" />
                 <span>Show Room Numbers</span>
               </div>
               <p className="text-[11px] text-stone-500">
@@ -216,7 +218,7 @@ export function StyleStep({
               }
               style={{ minHeight: 24, flexShrink: 0 }}
               className={`w-11 h-6 rounded-full transition-colors relative ${
-                settings.showRooms ? "bg-emerald-800" : "bg-stone-100"
+                settings.showRooms ? "bg-blue-800" : "bg-stone-100"
               }`}
             >
               <motion.div
@@ -229,7 +231,7 @@ export function StyleStep({
           <div className="p-4 rounded-2xl bg-white border border-stone-200 flex items-center justify-between">
             <div className="space-y-0.5">
               <div className="text-xs font-semibold text-stone-800 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                <Calendar className="w-3.5 h-3.5 text-blue-700" />
                 <span>Weekend Columns</span>
               </div>
               <p className="text-[11px] text-stone-500">
@@ -249,7 +251,7 @@ export function StyleStep({
                   showWeekend: e.target.value as "auto" | "always" | "never",
                 })
               }
-              className="px-2.5 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-xs focus:outline-none focus:border-emerald-700"
+              className="px-2.5 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-xs focus:outline-none focus:border-blue-700"
             >
               <option value="auto">Auto</option>
               <option value="never">Mon–Fri</option>
@@ -262,7 +264,7 @@ export function StyleStep({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+              <Sparkles className="w-3.5 h-3.5 text-blue-700" />
               <span>Subject Colors ({uniqueSubjects.length})</span>
             </label>
             <span className="text-[11px] text-stone-500"></span>
@@ -334,7 +336,7 @@ export function StyleStep({
           <button
             type="button"
             onClick={onContinue}
-            className="px-6 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+            className="px-6 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
           >
             <span>Preview Wallpaper</span>
             <ArrowRight className="w-4 h-4" />
@@ -350,11 +352,13 @@ export function StyleStep({
             <WallpaperPreviewCanvas
               classes={classes}
               settings={settings}
+              onShortenedClasses={setShortenedIds}
               className="block w-full h-auto"
             />
           </PhonePreview>
         </div>
         <p>Live preview</p>
+        <ScheduleDetails classes={classes} shortenedIds={shortenedIds} />
       </aside>
     </motion.div>
   );

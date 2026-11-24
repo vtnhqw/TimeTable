@@ -1,9 +1,18 @@
 import { layoutClasses } from "./layout.ts";
-import { ClassEntry, WallpaperSettings, Day } from "./schema";
-import { DeviceConfig } from "./devices";
-import { ThemeConfig } from "./themes";
-import { DAYS_ORDER, WEEKDAYS, timeToMinutes, formatHourLabel } from "./time";
-import { getSubjectColor, getContrastingTextColor, hexToRgba } from "./colors";
+import type { ClassEntry, WallpaperSettings, Day } from "./schema.ts";
+import type { DeviceConfig } from "./devices.ts";
+import type { ThemeConfig } from "./themes.ts";
+import {
+  DAYS_ORDER,
+  WEEKDAYS,
+  timeToMinutes,
+  formatHourLabel,
+} from "./time.ts";
+import { getSubjectColor, getContrastingTextColor } from "./colors.ts";
+
+export interface RenderReport {
+  shortenedClassIds: string[];
+}
 
 /**
  * Pure function that renders the timetable wallpaper onto an HTML5 Canvas.
@@ -15,9 +24,10 @@ export function renderWallpaper(
   settings: WallpaperSettings,
   device: DeviceConfig,
   theme: ThemeConfig,
-): void {
+): RenderReport {
+  const report: RenderReport = { shortenedClassIds: [] };
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) return report;
 
   const width = device.width;
   const height = device.height;
@@ -104,7 +114,7 @@ export function renderWallpaper(
   const sideMargin = width * 0.038; // ~46px on iPhone 16 Pro
   const gridWidth = width - sideMargin * 2;
 
-  const timeGutterWidth = width * 0.09; // ~108px for "09:00" labels
+  const timeGutterWidth = width * 0.1; // ~108px for "09:00" labels
   const headerHeight = height * 0.024; // ~62px for Mon, Tue etc.
   const headerGap = height * 0.008; // gap between header and grid
 
@@ -112,15 +122,15 @@ export function renderWallpaper(
   const scheduleHeight = totalGridHeight - headerHeight - headerGap;
   const hourRowHeight = scheduleHeight / totalHours;
 
-  const colGap = width * 0.008; // ~10px between day columns
+  const colGap = width * 0.01; // ~10px between day columns
   const dayColumnsWidth = gridWidth - timeGutterWidth;
   const colWidth = (dayColumnsWidth - (days.length - 1) * colGap) / days.length;
 
   // 5. Draw Card Backdrop for the Timetable Grid (Apple glassmorphism card style)
-  const cardRadius = width * 0.032; // ~38px
-  const cardPaddingTop = height * 0.012;
-  const cardPaddingBottom = height * 0.012;
-  const cardPaddingSide = width * 0.012;
+  const cardRadius = width * 0.028; // ~38px
+  const cardPaddingTop = width * 0.014;
+  const cardPaddingBottom = width * 0.014;
+  const cardPaddingSide = width * 0.014;
 
   const cardX = sideMargin - cardPaddingSide;
   const cardY = topSafeY - cardPaddingTop;
@@ -157,7 +167,7 @@ export function renderWallpaper(
       topSafeY,
       headerPillW,
       headerPillH,
-      headerPillH * 0.3,
+      width * 0.014,
     );
     ctx.fillStyle = theme.dayHeaderBg;
     ctx.fill();
@@ -167,6 +177,35 @@ export function renderWallpaper(
     ctx.fillText(day, colX + headerPillW / 2, topSafeY + headerPillH / 2);
     ctx.restore();
   });
+
+  const gridLeft = sideMargin + timeGutterWidth - colGap / 2;
+  const gridRight = sideMargin + gridWidth + colGap / 2;
+  const gridRadius = width * 0.014;
+  ctx.save();
+  ctx.beginPath();
+  drawRoundedRect(
+    ctx,
+    gridLeft,
+    scheduleTop,
+    gridRight - gridLeft,
+    scheduleHeight,
+    gridRadius,
+  );
+  ctx.clip();
+  // Alternating day lanes help the eye track a column through gaps between classes.
+  days.forEach((_, index) => {
+    if (index % 2 !== 0) return;
+    ctx.fillStyle =
+      theme.id === "dark" ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.025)";
+    ctx.fillRect(
+      sideMargin + timeGutterWidth + index * (colWidth + colGap),
+      scheduleTop,
+      colWidth,
+      scheduleHeight,
+    );
+  });
+
+  ctx.restore();
 
   // 7. Draw Horizontal Hour Grid Lines & Time Labels
   const timeFontScale = Math.round(width * 0.021); // ~25px
@@ -186,24 +225,25 @@ export function renderWallpaper(
       y,
     );
 
-    // Grid horizontal line across columns
+    // The outer rounded border supplies the first and last hour lines.
+    if (h === 0 || h === totalHours) continue;
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = theme.gridLineColor;
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]); // subtle dotted/dashed hour line
-    ctx.moveTo(sideMargin + timeGutterWidth, y);
-    ctx.lineTo(sideMargin + gridWidth, y);
+    ctx.lineWidth = Math.max(1.5, width * 0.0015);
+    ctx.setLineDash([]);
+    ctx.moveTo(sideMargin + timeGutterWidth - colGap / 2, y);
+    ctx.lineTo(sideMargin + gridWidth + colGap / 2, y);
     ctx.stroke();
     ctx.restore();
   }
 
-  // 8. Draw Vertical Column Dividers (Very subtle)
+  // 8. Day boundaries use the same solid grid rhythm as hour lines.
   ctx.save();
   ctx.strokeStyle = theme.gridLineColor;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 4]);
-  for (let i = 0; i <= days.length; i++) {
+  ctx.lineWidth = Math.max(1.5, width * 0.0015);
+  ctx.setLineDash([]);
+  for (let i = 1; i < days.length; i++) {
     const x =
       sideMargin + timeGutterWidth + i * (colWidth + colGap) - colGap / 2;
     ctx.beginPath();
@@ -211,6 +251,21 @@ export function renderWallpaper(
     ctx.lineTo(x, scheduleTop + scheduleHeight);
     ctx.stroke();
   }
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  drawRoundedRect(
+    ctx,
+    gridLeft,
+    scheduleTop,
+    gridRight - gridLeft,
+    scheduleHeight,
+    gridRadius,
+  );
+  ctx.strokeStyle = theme.gridLineColor;
+  ctx.lineWidth = Math.max(1.5, width * 0.0015);
+  ctx.stroke();
   ctx.restore();
 
   // 9. Assign Subject Colors (Consistent by subject)
@@ -223,7 +278,7 @@ export function renderWallpaper(
   });
 
   // 10. Draw Classes
-  const classCornerRadius = width * 0.018; // ~22px rounded corners
+  const classCornerRadius = width * 0.014; // ~22px rounded corners
   const startTotalMinutes = startHour * 60;
 
   layoutClasses(classes).forEach(({ entry, lane, lanes }) => {
@@ -263,11 +318,11 @@ export function renderWallpaper(
       theme.subjectColors[0];
     const textColor = getContrastingTextColor(fillColor);
 
-    // Draw class card with shadow
+    // A restrained neutral shadow keeps neighboring cards distinct.
     ctx.save();
-    ctx.shadowColor = hexToRgba(fillColor, 0.35);
-    ctx.shadowBlur = width * 0.012;
-    ctx.shadowOffsetY = width * 0.005;
+    ctx.shadowColor = "rgba(0,0,0,0.12)";
+    ctx.shadowBlur = width * 0.004;
+    ctx.shadowOffsetY = width * 0.002;
 
     ctx.beginPath();
     drawRoundedRect(ctx, blockX, blockY, blockW, blockH, classCornerRadius);
@@ -292,45 +347,39 @@ export function renderWallpaper(
     drawRoundedRect(ctx, blockX, blockY, blockW, blockH, classCornerRadius);
     ctx.clip();
 
-    const paddingX = blockW * 0.08;
-    const paddingY = Math.min(blockH * 0.15, height * 0.008);
-
-    // Subject font
-    let titleFontSize = Math.round(width * 0.023); // ~28px
-    if (blockH < hourRowHeight * 0.7) {
-      titleFontSize = Math.round(width * 0.019);
-    }
-    titleFontSize = Math.max(10, Math.round(titleFontSize / Math.sqrt(lanes)));
-    ctx.font = `700 ${titleFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif`;
-    ctx.fillStyle = textColor;
+    const paddingX = Math.min(width * 0.011, blockW * 0.09);
+    const paddingY = Math.min(width * 0.012, blockH * 0.12);
+    const text = fitClassText(
+      ctx,
+      entry.subject,
+      settings.showRooms ? (entry.room ?? "") : "",
+      blockW - paddingX * 2,
+      blockH - paddingY * 2,
+      width,
+    );
+    if (!text.complete) report.shortenedClassIds.push(entry.id);
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-
-    // Text wrapping / truncation
-    const maxTextWidth = blockW - paddingX * 2;
-    const lines = wrapText(ctx, entry.subject, maxTextWidth, 2);
-
+    ctx.fillStyle = textColor;
+    ctx.font = classFont(text.fontSize, 600);
     let curY = blockY + paddingY;
-    lines.forEach((line) => {
+    for (const line of text.subjectLines) {
       ctx.fillText(line, blockX + paddingX, curY);
-      curY += titleFontSize * 1.15;
-    });
-
-    // Room name (if enabled and space permits)
-    if (
-      settings.showRooms &&
-      entry.room &&
-      curY + titleFontSize * 0.8 < blockY + blockH - 4
-    ) {
-      const roomFontSize = Math.max(12, Math.round(titleFontSize * 0.78));
-      ctx.font = `500 ${roomFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif`;
-      ctx.fillStyle =
-        textColor === "black" ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.85)";
-      ctx.fillText(entry.room, blockX + paddingX, curY + 2);
+      curY += text.fontSize * 1.2;
+    }
+    if (text.roomLines.length) {
+      curY += text.fontSize * 0.35;
+      ctx.font = classFont(text.roomFontSize, 500);
+      ctx.fillStyle = textColor;
+      for (const line of text.roomLines) {
+        ctx.fillText(line, blockX + paddingX, curY);
+        curY += text.roomFontSize * 1.25;
+      }
     }
 
     ctx.restore();
   });
+  return report;
 }
 
 /**
@@ -357,61 +406,144 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-/**
- * Helper to wrap text into lines or truncate with ellipsis.
- */
-function wrapText(
+const classFont = (size: number, weight: number) =>
+  `${weight} ${size}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+
+// Wrap words first, then split long identifiers without dropping any characters.
+function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,
-  maxWidth: number,
-  maxLines: number,
+  width: number,
 ): string[] {
-  const words = text.split(" ");
+  if (!text.trim() || width <= 0) return [];
   const lines: string[] = [];
-  let currentLine = "";
-
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const metrics = ctx.measureText(testLine);
-
-    if (metrics.width <= maxWidth) {
-      currentLine = testLine;
-    } else {
-      if (lines.length + 1 >= maxLines) {
-        // Last line: truncate with ellipsis
-        let truncated = currentLine ? `${currentLine} ${word}` : word;
-        while (
-          truncated.length > 0 &&
-          ctx.measureText(`${truncated}…`).width > maxWidth
-        ) {
-          truncated = truncated.slice(0, -1);
-        }
-        lines.push(`${truncated}…`);
-        currentLine = "";
-        break;
-      } else {
-        if (currentLine) lines.push(currentLine);
-        currentLine = word;
+  let line = "";
+  for (const word of text.trim().split(/\s+/)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (ctx.measureText(candidate).width <= width) {
+      line = candidate;
+      continue;
+    }
+    if (line) lines.push(line);
+    line = "";
+    for (const character of word) {
+      if (line && ctx.measureText(line + character).width > width) {
+        lines.push(line);
+        line = "";
       }
+      line += character;
     }
   }
+  if (line) lines.push(line);
+  return lines;
+}
 
-  if (currentLine && lines.length < maxLines) {
-    // Check if currentLine exceeds maxWidth (single very long word)
-    if (ctx.measureText(currentLine).width > maxWidth) {
-      let truncated = currentLine;
-      while (
-        truncated.length > 0 &&
-        ctx.measureText(`${truncated}…`).width > maxWidth
-      ) {
-        truncated = truncated.slice(0, -1);
-      }
-      lines.push(`${truncated}…`);
-    } else {
-      lines.push(currentLine);
+function limitLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  count: number,
+  width: number,
+): string[] {
+  if (count < 1 || ctx.measureText("…").width > width) return [];
+  const result = lines.slice(0, count);
+  if (
+    lines.length > count ||
+    result.some((line) => ctx.measureText(line).width > width)
+  ) {
+    let last = Array.from(result[result.length - 1] ?? "");
+    while (last.length && ctx.measureText(last.join("") + "…").width > width)
+      last = last.slice(0, -1);
+    result[result.length - 1] = last.join("") + "…";
+  }
+  return result;
+}
+
+function fitClassText(
+  ctx: CanvasRenderingContext2D,
+  subject: string,
+  room: string,
+  width: number,
+  height: number,
+  canvasWidth: number,
+) {
+  const minimum = Math.max(11, Math.round(canvasWidth * 0.014));
+  const preferred = Math.max(minimum, Math.round(canvasWidth * 0.022));
+  for (let fontSize = preferred; fontSize >= minimum; fontSize--) {
+    const roomFontSize = Math.max(10, Math.round(fontSize * 0.82));
+    ctx.font = classFont(fontSize, 600);
+    const subjectLines = wrapLines(ctx, subject, width);
+    const subjectWordsFit = subject
+      .trim()
+      .split(/\s+/)
+      .every((word) => ctx.measureText(word).width <= width);
+    const subjectFits = subjectLines.every(
+      (line) => ctx.measureText(line).width <= width,
+    );
+    ctx.font = classFont(roomFontSize, 500);
+    const roomLines = wrapLines(ctx, room, width);
+    const roomWordsFit = room
+      .trim()
+      .split(/\s+/)
+      .every((word) => ctx.measureText(word).width <= width);
+    const roomFits = roomLines.every(
+      (line) => ctx.measureText(line).width <= width,
+    );
+    const gap = roomLines.length ? fontSize * 0.35 : 0;
+    const totalHeight =
+      subjectLines.length * fontSize * 1.2 +
+      gap +
+      roomLines.length * roomFontSize * 1.25;
+    if (
+      width > 0 &&
+      subjectLines.length &&
+      subjectFits &&
+      roomFits &&
+      (fontSize === minimum || (subjectWordsFit && roomWordsFit)) &&
+      totalHeight <= height
+    ) {
+      return {
+        subjectLines,
+        roomLines,
+        fontSize,
+        roomFontSize,
+        complete: true,
+      };
+    }
+    if (fontSize === minimum) {
+      // Tiny/overlapping sessions cannot fit arbitrary text. Keep the label bounded
+      // and report the loss so the preview can offer complete schedule details.
+      const roomCount = Math.max(
+        0,
+        Math.min(
+          2,
+          roomLines.length,
+          Math.floor((height - fontSize * 1.2 - gap) / (roomFontSize * 1.25)),
+        ),
+      );
+      const subjectCount = Math.max(
+        0,
+        Math.floor(
+          (height - (roomCount ? gap : 0) - roomCount * roomFontSize * 1.25) /
+            (fontSize * 1.2),
+        ),
+      );
+      ctx.font = classFont(fontSize, 600);
+      const shortSubject = limitLines(ctx, subjectLines, subjectCount, width);
+      ctx.font = classFont(roomFontSize, 500);
+      return {
+        subjectLines: shortSubject,
+        roomLines: limitLines(ctx, roomLines, roomCount, width),
+        fontSize,
+        roomFontSize,
+        complete: false,
+      };
     }
   }
-
-  return lines.length > 0 ? lines : [text];
+  return {
+    subjectLines: [],
+    roomLines: [],
+    fontSize: minimum,
+    roomFontSize: minimum,
+    complete: false,
+  };
 }

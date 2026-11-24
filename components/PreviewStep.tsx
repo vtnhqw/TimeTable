@@ -11,6 +11,7 @@ import {
   Image,
 } from "lucide-react";
 import { ClassEntry, WallpaperSettings } from "@/lib/schema";
+import { ScheduleDetails } from "./ScheduleDetails";
 import { PhonePreview } from "./PhonePreview";
 import { DEVICES } from "@/lib/devices";
 import {
@@ -29,6 +30,7 @@ export function PreviewStep({
   onBack: () => void;
 }) {
   const canvas = useRef<WallpaperCanvasHandle>(null);
+  const [shortenedIds, setShortenedIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -98,6 +100,7 @@ export function PreviewStep({
               ref={canvas}
               classes={classes}
               settings={settings}
+              onShortenedClasses={setShortenedIds}
               className="block w-full h-auto"
             />
           </PhonePreview>
@@ -145,7 +148,7 @@ export function PreviewStep({
             </button>
             <div aria-live="polite">
               {success && (
-                <p className="text-xs text-emerald-700">
+                <p className="text-xs text-blue-700">
                   Your image is ready. Check your browser’s downloads.
                 </p>
               )}
@@ -156,6 +159,7 @@ export function PreviewStep({
               )}
             </div>
           </div>
+          <ScheduleDetails classes={classes} shortenedIds={shortenedIds} />
           <p className="text-sm text-stone-500">
             Save to Photos, then set as your lock screen.
           </p>
