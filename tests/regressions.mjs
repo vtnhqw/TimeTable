@@ -95,6 +95,7 @@ const validClass = {
 };
 saveClassesToStorage([validClass]);
 assert.deepEqual(loadClassesFromStorage(), [validClass]);
+memory.set("timetable_classes_v1_fallback", "broken JSON");
 memory.set("timetable_classes_v1", "broken JSON");
 const originalWarn = console.warn;
 console.warn = () => {};

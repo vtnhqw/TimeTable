@@ -44,7 +44,7 @@ Automated API tests stub only the external Gemini HTTP response; they exercise t
 
 ## Privacy and deployment
 
-Uploaded images pass through this app's server to Google Gemini. The app does not persist uploaded images on the server or log API keys. Google's free-tier terms may allow submissions to be used for product improvement. Classes and style choices are saved in sessionStorage in the browser; the original preview is held in memory. The API route limits upload size, enforces same-origin browser uploads, and times out provider calls. For public deployment, configure host-level rate limits or authentication to control usage of your project's API quota; same-origin checking is not authentication. Use a Node server, not a static export.
+Uploaded images pass through this app's server to Google Gemini. The app does not persist uploaded images on the server or log API keys. Google's free-tier terms may allow submissions to be used for product improvement. Classes and style choices are saved in localStorage in this browser across sessions (with sessionStorage fallback if persistent storage is blocked); the original preview is held in memory. Existing session saves migrate automatically. Start over clears the saved schedule and resets styles. Deleted classes can be restored with Undo while staying on the review screen. Overlapping classes are flagged during review and rendered side by side. The API route limits upload size, enforces same-origin browser uploads, and times out provider calls. For public deployment, configure host-level rate limits or authentication to control usage of your project's API quota; same-origin checking is not authentication. Use a Node server, not a static export.
 
 ## Code layout
 

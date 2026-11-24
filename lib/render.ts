@@ -1,3 +1,4 @@
+import { layoutClasses } from "./layout.ts";
 import { ClassEntry, WallpaperSettings, Day } from "./schema";
 import { DeviceConfig } from "./devices";
 import { ThemeConfig } from "./themes";
@@ -225,7 +226,7 @@ export function renderWallpaper(
   const classCornerRadius = width * 0.018; // ~22px rounded corners
   const startTotalMinutes = startHour * 60;
 
-  classes.forEach((entry) => {
+  layoutClasses(classes).forEach(({ entry, lane, lanes }) => {
     const dayIndex = days.indexOf(entry.day);
     if (dayIndex === -1) return; // not in visible days
 
@@ -238,8 +239,13 @@ export function renderWallpaper(
     const clampedEnd = Math.min(endHour * 60, classEndMin);
     if (clampedEnd <= clampedStart) return;
 
+    const laneWidth = colWidth / lanes;
+    const laneGap = lanes > 1 ? Math.min(width * 0.003, laneWidth * 0.1) : 0;
     const blockX =
-      sideMargin + timeGutterWidth + dayIndex * (colWidth + colGap);
+      sideMargin +
+      timeGutterWidth +
+      dayIndex * (colWidth + colGap) +
+      lane * laneWidth;
     const blockY =
       scheduleTop +
       ((clampedStart - startTotalMinutes) / 60) * hourRowHeight +
@@ -248,7 +254,7 @@ export function renderWallpaper(
       1,
       ((clampedEnd - clampedStart) / 60) * hourRowHeight - 4,
     );
-    const blockW = colWidth;
+    const blockW = laneWidth - laneGap;
 
     // Class fill color
     const fillColor =
@@ -294,6 +300,7 @@ export function renderWallpaper(
     if (blockH < hourRowHeight * 0.7) {
       titleFontSize = Math.round(width * 0.019);
     }
+    titleFontSize = Math.max(10, Math.round(titleFontSize / Math.sqrt(lanes)));
     ctx.font = `700 ${titleFontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif`;
     ctx.fillStyle = textColor;
     ctx.textAlign = "left";

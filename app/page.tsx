@@ -57,7 +57,7 @@ export default function Home() {
   const [ocrStatus, setOcrStatus] = useState("Initializing…");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Restore session state on load
+  // Restore saved schedule on load
   useEffect(() => {
     const savedClasses = loadClassesFromStorage();
     const savedSettings = loadSettingsFromStorage();
@@ -74,7 +74,7 @@ export default function Home() {
     setIsLoaded(true);
   }, []);
 
-  // Save changes to sessionStorage
+  // Save changes in this browser
   const handleUpdateClasses = (newClasses: ClassEntry[]) => {
     setClasses(newClasses);
     saveClassesToStorage(newClasses);
@@ -96,7 +96,6 @@ export default function Home() {
   const handleImageSelected = async (file: File) => {
     extraction.current?.abort();
     extraction.current = new AbortController();
-    setSourceFile(file);
     const id = ++requestId.current;
     setCurrentStep("extracting");
     setOcrProgress(5);
@@ -114,12 +113,23 @@ export default function Home() {
       );
 
       if (id !== requestId.current) return;
-      handleUpdateClasses(result.classes);
-      setWarnings(result.warnings);
+      if (result.classes.length > 0) {
+        handleUpdateClasses(result.classes);
+        setSourceFile(file);
+        setWarnings(result.warnings);
+      } else {
+        if (classes.length === 0) setSourceFile(file);
+        setWarnings([
+          ...result.warnings,
+          classes.length > 0
+            ? "No replacement classes were found. Your existing schedule has been kept."
+            : "No classes were found. Try another image or add classes manually.",
+        ]);
+      }
       setCurrentStep("review");
     } catch (error) {
       if (id !== requestId.current) return;
-      handleUpdateClasses([]);
+      if (classes.length === 0) setSourceFile(file);
       setWarnings([
         error instanceof Error
           ? error.message

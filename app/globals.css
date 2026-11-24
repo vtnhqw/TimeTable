@@ -403,26 +403,26 @@ h1 span {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1.2cqw;
 }
 .lock-clock > span {
-  font-size: 4.4cqw;
+  font-size: 4.8cqw;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: -0.1px;
+  line-height: 1.25;
+  letter-spacing: 0;
 }
 .lock-clock strong {
   font-family:
-    ui-rounded,
+    "SF Pro Display",
     -apple-system,
     BlinkMacSystemFont,
-    "SF Pro Rounded",
+    "Helvetica Neue",
     sans-serif;
-  font-size: 29cqw;
-  font-weight: 600;
+  font-size: 28cqw;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -1.7cqw;
-  line-height: 1.06;
-  margin-left: -1.7cqw;
+  letter-spacing: -0.5cqw;
+  line-height: 1;
 }
 .phone-shortcuts {
   position: absolute;

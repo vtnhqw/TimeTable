@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ClassEntry, Day } from "@/lib/schema";
 import { getSubjectColor } from "@/lib/colors";
 import { DAYS_ORDER } from "@/lib/time";
+import { layoutClasses } from "@/lib/layout";
 import { AddClassModal } from "./AddClassModal";
 
 interface ReviewStepProps {
@@ -42,7 +43,11 @@ export function ReviewStep({
     "All",
   );
 
+  const [deletedEntries, setDeletedEntries] = useState<ClassEntry[]>([]);
+
   const handleDelete = (id: string) => {
+    const entry = classes.find((item) => item.id === id);
+    if (entry) setDeletedEntries((previous) => [...previous, entry]);
     onUpdateClasses(classes.filter((c) => c.id !== id));
   };
 
@@ -63,6 +68,12 @@ export function ReviewStep({
     if (dayDiff !== 0) return dayDiff;
     return a.start.localeCompare(b.start);
   });
+
+  const conflictingIds = new Set(
+    layoutClasses(classes)
+      .filter((item) => item.lanes > 1)
+      .map((item) => item.entry.id),
+  );
 
   const filteredClasses =
     selectedDayFilter === "All"
@@ -101,6 +112,30 @@ export function ReviewStep({
         </button>
       </div>
 
+      {deletedEntries.length > 0 && (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 p-3 text-sm"
+        >
+          <span>
+            Deleted {deletedEntries[deletedEntries.length - 1].subject}.
+          </span>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => {
+              const entry = deletedEntries[deletedEntries.length - 1];
+              if (!classes.some((item) => item.id === entry.id))
+                onUpdateClasses([...classes, entry]);
+              setDeletedEntries((previous) => previous.slice(0, -1));
+              setSelectedDayFilter("All");
+            }}
+          >
+            Undo
+          </button>
+        </div>
+      )}
+
       {sourceImage && (
         <details className="rounded-2xl border border-stone-200 p-4 bg-stone-50">
           <summary className="cursor-pointer text-sm font-semibold">
@@ -129,6 +164,16 @@ export function ReviewStep({
             </p>
           ))}
         </div>
+      )}
+
+      {conflictingIds.size > 0 && (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-800"
+        >
+          {conflictingIds.size} classes overlap in time. Check their days and
+          times; overlapping classes appear side by side on your wallpaper.
+        </p>
       )}
 
       {/* Day Filter Pills */}
@@ -227,6 +272,11 @@ export function ReviewStep({
                     <h4 className="text-sm font-bold text-stone-800 truncate">
                       {item.subject}
                     </h4>
+                    {conflictingIds.has(item.id) && (
+                      <span className="text-xs text-amber-800">
+                        Time conflict
+                      </span>
+                    )}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500 mt-0.5">
                       <span className="font-semibold text-emerald-700">
                         {item.day}
