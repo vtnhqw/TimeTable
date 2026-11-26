@@ -1,19 +1,34 @@
 "use client";
 import { useRef, useState } from "react";
-import { Upload, ArrowUpRight, PenLine, Play, ImagePlus } from "lucide-react";
+import {
+  Upload,
+  ArrowUpRight,
+  ArrowLeft,
+  PenLine,
+  Play,
+  ImagePlus,
+} from "lucide-react";
 import { WallpaperPreviewCanvas } from "./WallpaperPreviewCanvas";
 import { PhonePreview } from "./PhonePreview";
 import { useWebsiteTheme } from "./WebsiteTheme";
 import { IMAGE_ACCEPT, validateImageFile } from "@/lib/extraction/upload";
+import { DEFAULT_SETTINGS } from "@/lib/settings";
+import { ClassEntry, WallpaperSettings } from "@/lib/schema";
 import { SAMPLE_CLASSES } from "@/lib/initialData";
 export function UploadStep({
+  classes,
+  settings,
   onImageSelected,
   onSkipToManual,
   onUseSampleData,
+  onKeepEditing,
 }: {
+  classes: ClassEntry[];
+  settings: WallpaperSettings;
   onImageSelected: (file: File) => void;
   onSkipToManual: () => void;
   onUseSampleData: () => void;
+  onKeepEditing?: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
@@ -27,15 +42,33 @@ export function UploadStep({
   return (
     <div className="upload-layout">
       <section className="upload-content">
-        <span className="hero-kicker">YOUR WEEK, ON YOUR LOCK SCREEN</span>
-        <h1>
-          Your week.
-          <br />
-          <span>One glance.</span>
-        </h1>
-        <p className="hero-description">
-          From a busy timetable to a beautifully simple wallpaper.
-        </p>
+        {onKeepEditing ? (
+          <>
+            <div className="upload-return">
+              <p>Your current schedule is still here.</p>
+              <button className="button secondary" onClick={onKeepEditing}>
+                <ArrowLeft size={17} /> Back to review
+              </button>
+            </div>
+            <h1 className="upload-update-title">Update your timetable.</h1>
+            <p className="hero-description">
+              Choose a new image, or use the steps above to continue editing
+              your schedule.
+            </p>
+          </>
+        ) : (
+          <>
+            <span className="hero-kicker">YOUR WEEK, ON YOUR LOCK SCREEN</span>
+            <h1>
+              Your week.
+              <br />
+              <span>One glance.</span>
+            </h1>
+            <p className="hero-description">
+              From a busy timetable to a beautifully simple wallpaper.
+            </p>
+          </>
+        )}
         <div
           className={`upload-zone ${drag ? "dragging" : ""}`}
           onDragOver={(e) => {
@@ -82,14 +115,16 @@ export function UploadStep({
           </p>
         )}
         <div className="start-options">
-          <button onClick={onSkipToManual}>
+          <button className="button secondary" onClick={onSkipToManual}>
             <PenLine size={17} />
-            Add manually
+            {onKeepEditing ? "Start a blank schedule" : "Add manually"}
           </button>
-          <button onClick={onUseSampleData}>
-            <Play size={16} />
-            Try a sample
-          </button>
+          {!onKeepEditing && (
+            <button className="button secondary" onClick={onUseSampleData}>
+              <Play size={16} />
+              Try a sample
+            </button>
+          )}
         </div>
         <p className="privacy-note">Images are processed by Google Gemini.</p>
       </section>
@@ -99,16 +134,24 @@ export function UploadStep({
           <h2>A place for every class.</h2>
         </div>
         <div className="phone-stage">
-          <PhonePreview theme={theme}>
+          <PhonePreview
+            theme={onKeepEditing ? settings.theme : theme}
+            legacy={Boolean(onKeepEditing) && settings.device === "iphone-se"}
+          >
             <WallpaperPreviewCanvas
-              classes={SAMPLE_CLASSES}
-              settings={{
-                device: "iphone-16-pro",
-                theme,
-                showRooms: true,
-                showWeekend: "auto",
-                timeRange: "auto",
-              }}
+              classes={onKeepEditing ? classes : SAMPLE_CLASSES}
+              settings={
+                onKeepEditing
+                  ? settings
+                  : {
+                      ...DEFAULT_SETTINGS,
+                      device: "iphone-16-pro",
+                      theme,
+                      showRooms: true,
+                      showWeekend: "auto",
+                      timeRange: "auto",
+                    }
+              }
               className="block w-full h-auto"
             />
           </PhonePreview>

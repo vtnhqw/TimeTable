@@ -112,3 +112,33 @@ test("legacy style settings migrate alongside the schedule", () => {
     device: "iphone-se",
   });
 });
+
+test("save reports durable, temporary, and unsaved outcomes", () => {
+  assert.equal(saveClassesToStorage([entry]), "saved");
+  localStorage.setItem = () => {
+    throw Error("quota");
+  };
+  assert.equal(saveClassesToStorage([entry]), "temporary");
+  sessionStorage.setItem = () => {
+    throw Error("blocked");
+  };
+  assert.equal(saveClassesToStorage([entry]), "unsaved");
+});
+
+test("restored durable data remains saved when new writes are blocked", () => {
+  saveClassesToStorage([entry]);
+  localStorage.setItem = () => {
+    throw Error("quota");
+  };
+  sessionStorage.setItem = () => {
+    throw Error("blocked");
+  };
+  let status;
+  assert.deepEqual(
+    loadClassesFromStorage((value) => {
+      status = value;
+    }),
+    [entry],
+  );
+  assert.equal(status, "saved");
+});

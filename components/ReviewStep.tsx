@@ -23,6 +23,9 @@ import { AddClassModal } from "./AddClassModal";
 interface ReviewStepProps {
   classes: ClassEntry[];
   warnings: string[];
+  extractionError?: string | null;
+  manualEntry?: boolean;
+  onRetry?: () => void;
   sourceImage?: string;
   onUpdateClasses: (classes: ClassEntry[]) => void;
   onBack: () => void;
@@ -32,6 +35,9 @@ interface ReviewStepProps {
 export function ReviewStep({
   classes,
   warnings,
+  extractionError,
+  manualEntry,
+  onRetry,
   sourceImage,
   onUpdateClasses,
   onBack,
@@ -105,7 +111,7 @@ export function ReviewStep({
             setEditingEntry(null);
             setIsModalOpen(true);
           }}
-          className="px-4 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all w-full sm:w-auto"
+          className="button primary w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Class</span>
@@ -151,6 +157,29 @@ export function ReviewStep({
           />
         </details>
       )}
+      {extractionError && (
+        <div className="extraction-error" role="alert">
+          <strong>We couldn’t read your timetable</strong>
+          <p>{extractionError}</p>
+          {classes.length > 0 && <p>Your existing schedule has been kept.</p>}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {onRetry && (
+              <button className="button secondary" onClick={onRetry}>
+                Try again
+              </button>
+            )}
+            <button className="button secondary" onClick={onBack}>
+              Choose another image
+            </button>
+          </div>
+        </div>
+      )}
+      {manualEntry && classes.length === 0 && (
+        <p className="entry-help">
+          Start with one class. Choose its day and time, then add the rest of
+          your week.
+        </p>
+      )}
       {/* Warnings Banner if any */}
       {warnings.length > 0 && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 text-xs space-y-1">
@@ -159,10 +188,13 @@ export function ReviewStep({
             <span>Review these details</span>
           </div>
           {Array.from(new Set(warnings)).map((w, i) => (
-            <p key={i} className="text-stone-600 text-[11px] pl-6">
+            <p key={i} className="text-stone-600 text-xs pl-6">
               {w}
             </p>
           ))}
+          <button className="button secondary mt-3" onClick={onBack}>
+            Choose another image
+          </button>
         </div>
       )}
 
@@ -213,9 +245,7 @@ export function ReviewStep({
               }`}
             >
               <span>{d}</span>
-              <span className="text-[10px] opacity-75 font-mono">
-                ({count})
-              </span>
+              <span className="text-xs opacity-75 font-mono">({count})</span>
             </button>
           );
         })}
@@ -242,7 +272,9 @@ export function ReviewStep({
                 }}
                 className="text-xs text-blue-700 hover:underline"
               >
-                + Add your first class
+                {selectedDayFilter === "All"
+                  ? "+ Add your first class"
+                  : `Add a class on ${{ Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" }[selectedDayFilter]}`}
               </button>
             </div>
           ) : (
@@ -329,12 +361,8 @@ export function ReviewStep({
       </div>
 
       {/* Nav Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-stone-200">
-        <button
-          type="button"
-          onClick={onBack}
-          className="px-4 py-2.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-800 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-        >
+      <div className="step-actions">
+        <button type="button" onClick={onBack} className="button secondary">
           <ArrowLeft className="w-4 h-4" />
           <span>Back</span>
         </button>
@@ -343,11 +371,7 @@ export function ReviewStep({
           type="button"
           disabled={classes.length === 0}
           onClick={onContinue}
-          className={`px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition-all ${
-            classes.length > 0
-              ? "bg-blue-800 hover:bg-blue-700 text-white shadow-blue-700/25"
-              : "bg-stone-100 text-stone-500 cursor-not-allowed shadow-none"
-          }`}
+          className="button primary"
         >
           <span>Continue to Style</span>
           <ArrowRight className="w-4 h-4" />
@@ -360,6 +384,7 @@ export function ReviewStep({
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveEntry}
         initialEntry={editingEntry}
+        initialDay={selectedDayFilter === "All" ? "Mon" : selectedDayFilter}
       />
     </motion.div>
   );

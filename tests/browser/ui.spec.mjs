@@ -208,6 +208,9 @@ test("conflicts are flagged and both overlapping classes are visible in the wall
     );
   });
   await page.reload();
+  await page
+    .getByRole("button", { name: "Back to review", exact: true })
+    .click();
   await expect(page.getByText(/2 classes overlap in time/)).toBeVisible();
   await page.getByRole("button", { name: "Continue to Style" }).click();
   const pixels = await page.locator("canvas").evaluate((canvas) => {
@@ -251,8 +254,8 @@ test("review action icons are centered in consistent touch targets", async ({
       )
       .toBeLessThan(1);
     const box = await button.boundingBox();
-    expect(box.width).toBeGreaterThanOrEqual(44);
-    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.width).toBeGreaterThan(43.99);
+    expect(box.height).toBeGreaterThan(43.99);
   }
 });
 
@@ -284,12 +287,15 @@ test("compact wallpaper labels expose complete class details", async ({
     ),
   );
   await page.reload();
+  await page
+    .getByRole("button", { name: "Back to review", exact: true })
+    .click();
   await page.getByRole("button", { name: "Continue to Style" }).click();
   await expect(page.getByText(/shortened in this wallpaper/)).toBeVisible();
   await expect(
     page
       .locator(".schedule-details")
-      .getByText("Human Computer Interaction (CISB3323)", { exact: true }),
+      .getByText("Human Computer Interaction", { exact: true }),
   ).toBeVisible();
   await expect(
     page

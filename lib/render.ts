@@ -1,3 +1,4 @@
+import { getSubjectLabel } from "./labels.ts";
 import { layoutClasses } from "./layout.ts";
 import type { ClassEntry, WallpaperSettings, Day } from "./schema.ts";
 import type { DeviceConfig } from "./devices.ts";
@@ -9,6 +10,9 @@ import {
   formatHourLabel,
 } from "./time.ts";
 import { getSubjectColor, getContrastingTextColor } from "./colors.ts";
+
+const SYSTEM_FONT_STACK =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif';
 
 export interface RenderReport {
   shortenedClassIds: string[];
@@ -148,8 +152,8 @@ export function renderWallpaper(
   ctx.restore();
 
   // 6. Draw Day Headers
-  const dayFontScale = Math.round(width * 0.024); // ~29px
-  ctx.font = `600 ${dayFontScale}px -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, sans-serif`;
+  const dayFontScale = Math.round(width * 0.022); // Same system typeface as class labels
+  ctx.font = `600 ${dayFontScale}px ${SYSTEM_FONT_STACK}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -192,15 +196,15 @@ export function renderWallpaper(
     gridRadius,
   );
   ctx.clip();
-  // Alternating day lanes help the eye track a column through gaps between classes.
+  // Shade each whole grid cell, including the inset space beside class cards.
   days.forEach((_, index) => {
     if (index % 2 !== 0) return;
     ctx.fillStyle =
       theme.id === "dark" ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.025)";
     ctx.fillRect(
-      sideMargin + timeGutterWidth + index * (colWidth + colGap),
+      gridLeft + index * (colWidth + colGap),
       scheduleTop,
-      colWidth,
+      colWidth + colGap,
       scheduleHeight,
     );
   });
@@ -208,8 +212,8 @@ export function renderWallpaper(
   ctx.restore();
 
   // 7. Draw Horizontal Hour Grid Lines & Time Labels
-  const timeFontScale = Math.round(width * 0.021); // ~25px
-  ctx.font = `500 ${timeFontScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, monospace`;
+  const timeFontScale = Math.round(width * 0.019); // Secondary hierarchy for the time gutter
+  ctx.font = `500 ${timeFontScale}px ${SYSTEM_FONT_STACK}`;
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
 
@@ -301,14 +305,17 @@ export function renderWallpaper(
       timeGutterWidth +
       dayIndex * (colWidth + colGap) +
       lane * laneWidth;
+    const durationHeight = ((clampedEnd - clampedStart) / 60) * hourRowHeight;
+    // Match the side inset; retain a visible card for very short classes.
+    const verticalInset = Math.min(
+      colGap / 2,
+      Math.max(0, (durationHeight - 1) / 2),
+    );
     const blockY =
       scheduleTop +
       ((clampedStart - startTotalMinutes) / 60) * hourRowHeight +
-      2;
-    const blockH = Math.max(
-      1,
-      ((clampedEnd - clampedStart) / 60) * hourRowHeight - 4,
-    );
+      verticalInset;
+    const blockH = Math.max(1, durationHeight - verticalInset * 2);
     const blockW = laneWidth - laneGap;
 
     // Class fill color
@@ -348,14 +355,15 @@ export function renderWallpaper(
     ctx.clip();
 
     const paddingX = Math.min(width * 0.011, blockW * 0.09);
-    const paddingY = Math.min(width * 0.012, blockH * 0.12);
+    const paddingY = Math.min(paddingX, blockH * 0.05);
     const text = fitClassText(
       ctx,
-      entry.subject,
+      getSubjectLabel(entry.subject, settings),
       settings.showRooms ? (entry.room ?? "") : "",
       blockW - paddingX * 2,
       blockH - paddingY * 2,
       width,
+      settings.textSize ?? "standard",
     );
     if (!text.complete) report.shortenedClassIds.push(entry.id);
     ctx.textAlign = "left";
@@ -407,13 +415,14 @@ function drawRoundedRect(
 }
 
 const classFont = (size: number, weight: number) =>
-  `${weight} ${size}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+  `${weight} ${size}px ${SYSTEM_FONT_STACK}`;
 
-// Wrap words first, then split long identifiers without dropping any characters.
+// Ordinary subject words stay whole. Room identifiers may wrap at separators.
 function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,
   width: number,
+  room = false,
 ): string[] {
   if (!text.trim() || width <= 0) return [];
   const lines: string[] = [];
@@ -426,13 +435,15 @@ function wrapLines(
     }
     if (line) lines.push(line);
     line = "";
-    for (const character of word) {
-      if (line && ctx.measureText(line + character).width > width) {
-        lines.push(line);
-        line = "";
+    if (room && ctx.measureText(word).width > width) {
+      for (const part of word.split(/(?<=[/,-])/)) {
+        if (line && ctx.measureText(line + part).width > width) {
+          lines.push(line);
+          line = "";
+        }
+        line += part;
       }
-      line += character;
-    }
+    } else line = word;
   }
   if (line) lines.push(line);
   return lines;
@@ -445,17 +456,17 @@ function limitLines(
   width: number,
 ): string[] {
   if (count < 1 || ctx.measureText("…").width > width) return [];
-  const result = lines.slice(0, count);
-  if (
-    lines.length > count ||
-    result.some((line) => ctx.measureText(line).width > width)
-  ) {
-    let last = Array.from(result[result.length - 1] ?? "");
-    while (last.length && ctx.measureText(last.join("") + "…").width > width)
-      last = last.slice(0, -1);
-    result[result.length - 1] = last.join("") + "…";
-  }
-  return result;
+  return lines.slice(0, count).map((line, index) => {
+    if (
+      ctx.measureText(line).width <= width &&
+      !(index === count - 1 && lines.length > count)
+    )
+      return line;
+    const chars = Array.from(line);
+    while (chars.length && ctx.measureText(chars.join("") + "…").width > width)
+      chars.pop();
+    return chars.join("") + "…";
+  });
 }
 
 function fitClassText(
@@ -465,85 +476,59 @@ function fitClassText(
   width: number,
   height: number,
   canvasWidth: number,
+  textSize: WallpaperSettings["textSize"],
 ) {
-  const minimum = Math.max(11, Math.round(canvasWidth * 0.014));
-  const preferred = Math.max(minimum, Math.round(canvasWidth * 0.022));
-  for (let fontSize = preferred; fontSize >= minimum; fontSize--) {
-    const roomFontSize = Math.max(10, Math.round(fontSize * 0.82));
-    ctx.font = classFont(fontSize, 600);
-    const subjectLines = wrapLines(ctx, subject, width);
-    const subjectWordsFit = subject
-      .trim()
-      .split(/\s+/)
-      .every((word) => ctx.measureText(word).width <= width);
-    const subjectFits = subjectLines.every(
-      (line) => ctx.measureText(line).width <= width,
-    );
-    ctx.font = classFont(roomFontSize, 500);
-    const roomLines = wrapLines(ctx, room, width);
-    const roomWordsFit = room
-      .trim()
-      .split(/\s+/)
-      .every((word) => ctx.measureText(word).width <= width);
-    const roomFits = roomLines.every(
-      (line) => ctx.measureText(line).width <= width,
-    );
-    const gap = roomLines.length ? fontSize * 0.35 : 0;
-    const totalHeight =
-      subjectLines.length * fontSize * 1.2 +
-      gap +
-      roomLines.length * roomFontSize * 1.25;
-    if (
-      width > 0 &&
-      subjectLines.length &&
-      subjectFits &&
-      roomFits &&
-      (fontSize === minimum || (subjectWordsFit && roomWordsFit)) &&
-      totalHeight <= height
-    ) {
-      return {
-        subjectLines,
-        roomLines,
-        fontSize,
-        roomFontSize,
-        complete: true,
-      };
-    }
-    if (fontSize === minimum) {
-      // Tiny/overlapping sessions cannot fit arbitrary text. Keep the label bounded
-      // and report the loss so the preview can offer complete schedule details.
-      const roomCount = Math.max(
-        0,
-        Math.min(
-          2,
-          roomLines.length,
-          Math.floor((height - fontSize * 1.2 - gap) / (roomFontSize * 1.25)),
-        ),
-      );
-      const subjectCount = Math.max(
-        0,
-        Math.floor(
-          (height - (roomCount ? gap : 0) - roomCount * roomFontSize * 1.25) /
-            (fontSize * 1.2),
-        ),
-      );
-      ctx.font = classFont(fontSize, 600);
-      const shortSubject = limitLines(ctx, subjectLines, subjectCount, width);
-      ctx.font = classFont(roomFontSize, 500);
-      return {
-        subjectLines: shortSubject,
-        roomLines: limitLines(ctx, roomLines, roomCount, width),
-        fontSize,
-        roomFontSize,
-        complete: false,
-      };
-    }
+  const scale = { small: 0.018, standard: 0.02, large: 0.023 }[textSize];
+  const fontSize = Math.max(11, Math.round(canvasWidth * scale));
+  const roomFontSize = Math.max(10, Math.round(fontSize * 0.82));
+  ctx.font = classFont(fontSize, 600);
+  const subjectLines = wrapLines(ctx, subject, width);
+  const subjectFits = subjectLines.every(
+    (line) => ctx.measureText(line).width <= width,
+  );
+  ctx.font = classFont(roomFontSize, 500);
+  const roomLines = wrapLines(ctx, room, width, true);
+  const roomFits = roomLines.every(
+    (line) => ctx.measureText(line).width <= width,
+  );
+  const gap = roomLines.length ? fontSize * 0.35 : 0;
+  const totalHeight =
+    subjectLines.length * fontSize * 1.2 +
+    gap +
+    roomLines.length * roomFontSize * 1.25;
+  if (
+    width > 0 &&
+    subjectLines.length &&
+    subjectFits &&
+    roomFits &&
+    totalHeight <= height
+  ) {
+    return { subjectLines, roomLines, fontSize, roomFontSize, complete: true };
   }
+  // Keep a stable font size across the timetable; explicit shortening is reported.
+  const roomCount = Math.max(
+    0,
+    Math.min(
+      2,
+      roomLines.length,
+      Math.floor((height - fontSize * 1.2 - gap) / (roomFontSize * 1.25)),
+    ),
+  );
+  const subjectCount = Math.max(
+    0,
+    Math.floor(
+      (height - (roomCount ? gap : 0) - roomCount * roomFontSize * 1.25) /
+        (fontSize * 1.2),
+    ),
+  );
+  ctx.font = classFont(fontSize, 600);
+  const shortSubject = limitLines(ctx, subjectLines, subjectCount, width);
+  ctx.font = classFont(roomFontSize, 500);
   return {
-    subjectLines: [],
-    roomLines: [],
-    fontSize: minimum,
-    roomFontSize: minimum,
+    subjectLines: shortSubject,
+    roomLines: limitLines(ctx, roomLines, roomCount, width),
+    fontSize,
+    roomFontSize,
     complete: false,
   };
 }

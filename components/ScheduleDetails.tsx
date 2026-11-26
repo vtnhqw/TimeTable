@@ -1,15 +1,18 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import type { ClassEntry } from "@/lib/schema";
+import { getSubjectLabel } from "@/lib/labels";
+import type { ClassEntry, WallpaperSettings } from "@/lib/schema";
 import { DAYS_ORDER } from "@/lib/time";
 
 export function ScheduleDetails({
   classes,
   shortenedIds,
+  settings,
 }: {
   classes: ClassEntry[];
   shortenedIds: string[];
+  settings: WallpaperSettings;
 }) {
   const sorted = [...classes].sort(
     (a, b) =>
@@ -30,7 +33,8 @@ export function ScheduleDetails({
           {shortenedIds.length}{" "}
           {shortenedIds.length === 1 ? "label is" : "labels are"} shortened in
           this wallpaper because the blocks are too small. Full names and rooms
-          are shown below.
+          are shown below. Try Short or Initials above, or choose a smaller text
+          size.
         </p>
       )}
       <ol>
@@ -39,7 +43,12 @@ export function ScheduleDetails({
             <span className="schedule-detail-time">
               {entry.day} · {entry.start}–{entry.end}
             </span>
-            <strong>{entry.subject}</strong>
+            <strong>
+              {getSubjectLabel(entry.subject, {
+                ...settings,
+                nameStyle: "full",
+              })}
+            </strong>
             {entry.room && (
               <span className="schedule-detail-room">{entry.room}</span>
             )}

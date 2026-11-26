@@ -19,6 +19,7 @@ interface AddClassModalProps {
   onClose: () => void;
   onSave: (entry: ClassEntry) => void;
   initialEntry?: ClassEntry | null;
+  initialDay?: Day;
 }
 
 export function AddClassModal({
@@ -26,6 +27,7 @@ export function AddClassModal({
   onClose,
   onSave,
   initialEntry,
+  initialDay = "Mon",
 }: AddClassModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -82,13 +84,13 @@ export function AddClassModal({
       setRoom(initialEntry.room || "");
     } else {
       setSubject("");
-      setDay("Mon");
+      setDay(initialDay);
       setStart("09:00");
       setEnd("10:30");
       setRoom("");
     }
     setError(null);
-  }, [initialEntry, isOpen]);
+  }, [initialEntry, initialDay, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,14 +281,11 @@ export function AddClassModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-600 hover:text-stone-800 text-xs font-medium hover:bg-stone-200 transition-colors"
+                  className="button secondary"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all"
-                >
+                <button type="submit" className="button primary">
                   {initialEntry ? (
                     <Save className="w-4 h-4" />
                   ) : (

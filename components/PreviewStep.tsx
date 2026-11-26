@@ -2,6 +2,8 @@
 import { useState, useRef } from "react";
 import {
   Download,
+  ChevronDown,
+  Maximize2,
   ArrowLeft,
   Eye,
   EyeOff,
@@ -11,7 +13,9 @@ import {
   Image,
 } from "lucide-react";
 import { ClassEntry, WallpaperSettings } from "@/lib/schema";
+import { WallpaperDetailsControls } from "./WallpaperDetailsControls";
 import { ScheduleDetails } from "./ScheduleDetails";
+import { FullscreenWallpaperPreview } from "./FullscreenWallpaperPreview";
 import { PhonePreview } from "./PhonePreview";
 import { DEVICES } from "@/lib/devices";
 import {
@@ -34,6 +38,7 @@ export function PreviewStep({
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [fullscreen, setFullscreen] = useState(false);
   const [overlay, setOverlay] = useState(true);
   const device = DEVICES[settings.device];
   async function download() {
@@ -90,20 +95,29 @@ export function PreviewStep({
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        <div className="preview-panel">
-          <PhonePreview
-            theme={settings.theme}
-            overlay={overlay}
-            legacy={settings.device === "iphone-se"}
+        <div className="space-y-3">
+          <div className="preview-panel">
+            <PhonePreview
+              theme={settings.theme}
+              overlay={overlay}
+              legacy={settings.device === "iphone-se"}
+            >
+              <WallpaperPreviewCanvas
+                ref={canvas}
+                classes={classes}
+                settings={settings}
+                onShortenedClasses={setShortenedIds}
+                className="block w-full h-auto"
+              />
+            </PhonePreview>
+          </div>
+          <button
+            className="button secondary w-full"
+            aria-haspopup="dialog"
+            onClick={() => setFullscreen(true)}
           >
-            <WallpaperPreviewCanvas
-              ref={canvas}
-              classes={classes}
-              settings={settings}
-              onShortenedClasses={setShortenedIds}
-              className="block w-full h-auto"
-            />
-          </PhonePreview>
+            <Maximize2 size={18} /> View full screen
+          </button>
         </div>
         <div className="space-y-5">
           <div className="border border-stone-200 rounded-2xl p-6 space-y-5">
@@ -159,7 +173,24 @@ export function PreviewStep({
               )}
             </div>
           </div>
-          <ScheduleDetails classes={classes} shortenedIds={shortenedIds} />
+          <details className="download-adjustments">
+            <summary>
+              Adjust wallpaper <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <WallpaperDetailsControls
+              classes={classes}
+              settings={settings}
+              onChange={(next) => {
+                setSuccess(false);
+                onUpdateSettings(next);
+              }}
+            />
+          </details>
+          <ScheduleDetails
+            classes={classes}
+            shortenedIds={shortenedIds}
+            settings={settings}
+          />
           <p className="text-sm text-stone-500">
             Save to Photos, then set as your lock screen.
           </p>
@@ -168,6 +199,13 @@ export function PreviewStep({
           </button>
         </div>
       </div>
+      {fullscreen && (
+        <FullscreenWallpaperPreview
+          classes={classes}
+          settings={settings}
+          onClose={() => setFullscreen(false)}
+        />
+      )}
     </section>
   );
 }

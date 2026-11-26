@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Palette,
   Smartphone,
@@ -10,14 +11,16 @@ import {
   ArrowLeft,
   Check,
   Sparkles,
-  Building,
   Calendar,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ClassEntry, WallpaperSettings, DeviceId } from "@/lib/schema";
 import { DEVICES } from "@/lib/devices";
 import { WallpaperPreviewCanvas } from "./WallpaperPreviewCanvas";
+import { WallpaperDetailsControls } from "./WallpaperDetailsControls";
+import { getSubjectLabel } from "@/lib/labels";
 import { ScheduleDetails } from "./ScheduleDetails";
+import { MobilePreviewSheet } from "./MobilePreviewSheet";
 import { PhonePreview } from "./PhonePreview";
 import { THEMES } from "@/lib/themes";
 import { getSubjectColor } from "@/lib/colors";
@@ -39,6 +42,7 @@ export function StyleStep({
   onBack,
   onContinue,
 }: StyleStepProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [shortenedIds, setShortenedIds] = useState<string[]>([]);
   // Extract unique subjects
   const uniqueSubjects = Array.from(
@@ -109,7 +113,7 @@ export function StyleStep({
                   />
                 ))}
               </div>
-              <p className="text-[11px] text-stone-500 mt-2">
+              <p className="text-xs text-stone-500 mt-2">
                 Deep navy. Bright classes.
               </p>
             </button>
@@ -151,7 +155,7 @@ export function StyleStep({
                   />
                 ))}
               </div>
-              <p className="text-[11px] text-stone-500 mt-2">
+              <p className="text-xs text-stone-500 mt-2">
                 Soft background. Clear details.
               </p>
             </button>
@@ -184,7 +188,7 @@ export function StyleStep({
                   }`}
                 >
                   <div className="text-xs font-bold truncate">{dev.name}</div>
-                  <div className="text-[10px] text-stone-500 font-mono mt-0.5">
+                  <div className="text-xs text-stone-500 font-mono mt-0.5">
                     {dev.width}×{dev.height}
                   </div>
                 </button>
@@ -193,48 +197,21 @@ export function StyleStep({
           </div>
         </div>
 
-        {/* 3. Toggles: Show Rooms & Show Weekend */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-4 rounded-2xl bg-white border border-stone-200 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="text-xs font-semibold text-stone-800 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-blue-700" />
-                <span>Show Room Numbers</span>
-              </div>
-              <p className="text-[11px] text-stone-500">
-                Rooms in class blocks
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-label="Show room numbers"
-              aria-checked={settings.showRooms}
-              onClick={() =>
-                onUpdateSettings({
-                  ...settings,
-                  showRooms: !settings.showRooms,
-                })
-              }
-              style={{ minHeight: 24, flexShrink: 0 }}
-              className={`w-11 h-6 rounded-full transition-colors relative ${
-                settings.showRooms ? "bg-blue-800" : "bg-stone-100"
-              }`}
-            >
-              <motion.div
-                animate={{ x: settings.showRooms ? 22 : 2 }}
-                className="w-5 h-5 rounded-full bg-white shadow-md absolute top-0.5"
-              />
-            </button>
-          </div>
+        <WallpaperDetailsControls
+          classes={classes}
+          settings={settings}
+          onChange={onUpdateSettings}
+        />
 
+        {/* Weekend visibility */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-4 rounded-2xl bg-white border border-stone-200 flex items-center justify-between">
             <div className="space-y-0.5">
               <div className="text-xs font-semibold text-stone-800 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-blue-700" />
                 <span>Weekend Columns</span>
               </div>
-              <p className="text-[11px] text-stone-500">
+              <p className="text-xs text-stone-500">
                 {settings.showWeekend === "auto"
                   ? "Auto (shown if weekend class exists)"
                   : settings.showWeekend === "always"
@@ -267,7 +244,7 @@ export function StyleStep({
               <Sparkles className="w-3.5 h-3.5 text-blue-700" />
               <span>Subject Colors ({uniqueSubjects.length})</span>
             </label>
-            <span className="text-[11px] text-stone-500"></span>
+            <span className="text-xs text-stone-500"></span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -291,7 +268,10 @@ export function StyleStep({
                       style={{ backgroundColor: currentColor }}
                     />
                     <span className="text-xs font-bold text-stone-800 truncate">
-                      {subject}
+                      {getSubjectLabel(subject, {
+                        ...settings,
+                        nameStyle: "full",
+                      })}
                     </span>
                   </div>
 
@@ -323,26 +303,56 @@ export function StyleStep({
         </div>
 
         {/* Nav Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-stone-200">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-4 py-2.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-800 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          >
+        <div className="step-actions">
+          <button type="button" onClick={onBack} className="button secondary">
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onContinue}
-            className="px-6 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-          >
+          <button type="button" onClick={onContinue} className="button primary">
             <span>Preview Wallpaper</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div className="mobile-preview-trigger">
+            <button
+              className="button primary"
+              onClick={() => setPreviewOpen(true)}
+              aria-haspopup="dialog"
+            >
+              View preview
+            </button>
+          </div>,
+          document.body,
+        )}
+      {previewOpen && (
+        <MobilePreviewSheet onClose={() => setPreviewOpen(false)}>
+          <div className="preview-panel">
+            <PhonePreview
+              theme={settings.theme}
+              legacy={settings.device === "iphone-se"}
+            >
+              <WallpaperPreviewCanvas
+                classes={classes}
+                settings={settings}
+                className="block w-full h-auto"
+              />
+            </PhonePreview>
+          </div>
+          <ScheduleDetails
+            classes={classes}
+            shortenedIds={shortenedIds}
+            settings={settings}
+          />
+          <p className="entry-help">
+            The clock is preview-only. Close this preview to keep adjusting your
+            wallpaper.
+          </p>
+        </MobilePreviewSheet>
+      )}
       <aside className="settings-preview">
         <div className="preview-panel">
           <PhonePreview
@@ -358,7 +368,11 @@ export function StyleStep({
           </PhonePreview>
         </div>
         <p>Live preview</p>
-        <ScheduleDetails classes={classes} shortenedIds={shortenedIds} />
+        <ScheduleDetails
+          classes={classes}
+          shortenedIds={shortenedIds}
+          settings={settings}
+        />
       </aside>
     </motion.div>
   );

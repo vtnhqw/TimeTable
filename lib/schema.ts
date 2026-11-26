@@ -55,6 +55,17 @@ export const WallpaperSettingsSchema = z.object({
   device: DeviceIdSchema,
   theme: ThemeModeSchema,
   showRooms: z.boolean(),
+  nameStyle: z.enum(["full", "short", "initials"]).default("full"),
+  textSize: z.enum(["small", "standard", "large"]).default("standard"),
+  showCourseCodes: z.boolean().default(false),
+  subjectLabelOverrides: z
+    .record(
+      z.object({
+        short: z.string().max(40).optional(),
+        initials: z.string().max(8).optional(),
+      }),
+    )
+    .default({}),
   showWeekend: z.enum(["auto", "always", "never"]),
   timeRange: z.union([
     z.literal("auto"),
